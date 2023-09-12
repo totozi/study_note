@@ -164,3 +164,34 @@ The following example shows the data access objects daos.xml file:
 In the preceding example, the service layer consists of the PetStoreServiceImpl class and two data access objects of the types JpaAccountDao and JpaItemDao (based on the JPA Object-Relational Mapping standard). The property name element refers to the name of the JavaBean property, and the ref element refers to the name of another bean definition. This linkage between id and ref elements expresses the dependency between collaborating objects. For details of configuring an object’s dependencies, see Dependencies.
 - 앞선 예시를 살펴보면, 서비스 레이어는 PetStoreServiceImpl와 2개의 DAO 오브젝트들(JpaAccountDao and JpaItemDao)로 구성되어 있다. 프로퍼티 이름 요소는 java bean 프로퍼티의 이름을 뜻하고 ref 요소는 다른 java bean 정의의 이름을 나타낸다. (즉 daos.xml에 있는 bean id를 뜻한다.)
 - 이 id와 ref 요소 사이의 연결이 서로 협조하는 오브젝트들의 연결을 나타내는 것이다.(service class와 dao class)
+  
+---
+
+## Composing XML-based Configuration Metadata
+It can be useful to have bean definitions span multiple XML files. Often, each individual XML configuration file represents a logical layer or module in your architecture.
+- 정의들이 여러 XML 파일로 확장되도록 하는 것이 유용했었다고 할 수 있다. 종종 각각의 XML 구성 파일이 논리적 계층이나 모듈을 나타내기도 한다.
+You can use the application context constructor to load bean definitions from all these XML fragments. This constructor takes multiple Resource locations, as was shown in the previous section. Alternatively, use one or more occurrences of the ```<import/>``` element to load bean definitions from another file or files. The following example shows how to do so:
+- 어플리케이션 컨텍스트 생성자를 이용해 모든 XML들로부터 bean 정의를 로드할 수 있다. 이 생성자는 여러 리소스 로케이션을 갖게 된다.(서비스 xml이 dao xml을 참조하므로 서비스 오브젝트를 생성하면 daos.xml의 로케이션을 자동적으로 갖게 된다.) 이에 대한 대안으로  하나이상의 ```<import/>``` 요소를 선언하여 다른 파일로부터 bean 정의를 가져올 수 있다.  
+
+```xml
+<beans>
+	<import resource="services.xml"/>
+	<import resource="resources/messageSource.xml"/>
+	<import resource="/resources/themeSource.xml"/>
+
+	<bean id="bean1" class="..."/>
+	<bean id="bean2" class="..."/>
+</beans>
+```
+
+In the preceding example, external bean definitions are loaded from three files: services.xml, messageSource.xml, and themeSource.xml. All location paths are relative to the definition file doing the importing, so services.xml must be in the same directory or classpath location as the file doing the importing, while messageSource.xml and themeSource.xml must be in a resources location below the location of the importing file. As you can see, a leading slash is ignored. However, given that these paths are relative, it is better form not to use the slash at all. The contents of the files being imported, including the top level <beans/> element, must be valid XML bean definitions, according to the Spring Schema.
+- 앞의 예제에서, 외부 빈 정의가 다른 3개의 파일로부터 로드되었다. 모든 로케이션 경로는 import를 하는 파일에 대해 상대적인 경로를 가진다.
+<blockquote>
+It is possible, but not recommended, to reference files in parent directories using a relative "../" path. Doing so creates a dependency on a file that is outside the current application. In particular, this reference is not recommended for classpath: URLs (for example, classpath:../services.xml), where the runtime resolution process chooses the “nearest” classpath root and then looks into its parent directory. Classpath configuration changes may lead to the choice of a different, incorrect directory.
+- ../ 같은 걸로 상위 폴더 가서 참조하는 건 좋지 않다.
+
+You can always use fully qualified resource locations instead of relative paths: for example, file:C:/config/services.xml or classpath:/config/services.xml. However, be aware that you are coupling your application’s configuration to specific absolute locations. It is generally preferable to keep an indirection for such absolute locations — for example, through "${…​}" placeholders that are resolved against JVM system properties at runtime.
+- 절대 경로를 사용해도 된다. 하지만 커플링이 안되어있을 수 있으니 조심해라
+</blockquote>
+The namespace itself provides the import directive feature. Further configuration features beyond plain bean definitions are available in a selection of XML namespaces provided by Spring — for example, the context and util namespaces.
+- 네임스페이스 그 자체가 임포트 구문의 특징을 가진다.(그 자체가 임포트 구문). 더 나아가서 평범한 bean 정의 이상의 특징들이 스프링에서 제공하는 일련의 XML 네임스페이스를 이용할 수 있다. 예를 들면 context와 util 네임스페이스가 있다.
